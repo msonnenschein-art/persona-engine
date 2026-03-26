@@ -117,7 +117,11 @@ def _init_state() -> None:
         "chat_comp": None,
         "chat_active_config": None,
     }
-    for defaults in (char_defaults, rubric_defaults, chat_defaults):
+    ingester_defaults: dict = {
+        "ingester_yaml": None,
+        "ingester_char_name": "character",
+    }
+    for defaults in (char_defaults, rubric_defaults, chat_defaults, ingester_defaults):
         for k, v in defaults.items():
             if k not in st.session_state:
                 st.session_state[k] = v
@@ -849,7 +853,160 @@ def render_rubric() -> None:
         st.code(yaml_str, language="yaml")
 
 
-# ── Page 4: Chat ──────────────────────────────────────────────────────────────
+# ── Page 4: Transcript Ingester ──────────────────────────────────────────────
+
+def render_ingester() -> None:
+    import os
+    import tempfile
+
+    st.title("Transcript Ingester")
+    st.caption(
+        "Paste or upload a plain-text transcript and the engine will reverse-engineer "
+        "a character YAML from it — name, personality, background, speaking style, "
+        "secrets, voice samples, and more."
+    )
+    st.warning(
+        "Fields marked `# inferred - verify` are the engine's best guess from the "
+        "transcript. Review them in Character Creator before using in a demo."
+    )
+
+    # ── Input ─────────────────────────────────────────────────────────────────
+    input_mode = st.radio(
+        "Input method", ["Paste text", "Upload .txt file"],
+        horizontal=True, key="ing_input_mode",
+    )
+
+    raw_text: str | None = None
+
+    if input_mode == "Paste text":
+        pasted = st.text_area(
+            "Transcript",
+            key="ing_paste",
+            height=300,
+            placeholder=(
+                "User: Hey, what's your name?\n"
+                "Aria: Aria. And you are?\n"
+                "User: Just passing through.\n"
+                "Aria: Nobody just passes through here."
+            ),
+        )
+        raw_text = pasted or None
+    else:
+        uploaded = st.file_uploader(
+            "Upload transcript (.txt)", type=["txt"], key="ing_upload",
+        )
+        if uploaded:
+            raw_text = uploaded.read().decode("utf-8")
+
+    # ── Options ───────────────────────────────────────────────────────────────
+    opt_l, opt_r = st.columns(2)
+    with opt_l:
+        ing_notes = st.text_input(
+            "Notes (optional)", key="ing_notes",
+            placeholder="e.g. Session 1, client demo 2024-01-15",
+            help="Added as a provenance comment at the top of the generated YAML.",
+        )
+    with opt_r:
+        ing_char_label = st.text_input(
+            "Character label override (optional)", key="ing_char_label",
+            placeholder="e.g. Aria",
+            help=(
+                "The speaker label for the character in the transcript. "
+                "Only needed if auto-detection picks the wrong speaker."
+            ),
+        )
+
+    # ── Generate ──────────────────────────────────────────────────────────────
+    if st.button("Generate Character YAML", type="primary", key="ing_generate"):
+        if not raw_text or not raw_text.strip():
+            st.error("Paste a transcript or upload a file first.")
+        elif not os.environ.get("ANTHROPIC_API_KEY"):
+            st.error("ANTHROPIC_API_KEY is not set. Add it to your .env file.")
+        else:
+            tmp_path: Path | None = None
+            try:
+                from ingest_transcript import (
+                    parse_transcript,
+                    format_transcript,
+                    extract_character,
+                    render_yaml,
+                )
+
+                # parse_transcript expects a file path — write to a temp file
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".txt", delete=False, encoding="utf-8"
+                ) as f:
+                    f.write(raw_text)
+                    tmp_path = Path(f.name)
+
+                user_label, char_label, turns = parse_transcript(
+                    tmp_path, ing_char_label.strip() or None
+                )
+                st.info(
+                    f"Detected **{len(turns)} turns** — "
+                    f"user: `{user_label}` · character: `{char_label}`"
+                )
+
+                transcript_text = format_transcript(turns, user_label, char_label)
+
+                with st.spinner(f"Sending to Claude…"):
+                    try:
+                        data = extract_character(
+                            transcript_text, char_label, "claude-opus-4-6"
+                        )
+                    except SystemExit as exc:
+                        st.error(f"Extraction failed: {exc}")
+                        st.stop()
+
+                yaml_output = render_yaml(
+                    data, ing_notes.strip() or None, "pasted_transcript"
+                )
+                st.session_state["ingester_yaml"] = yaml_output
+                st.session_state["ingester_char_name"] = (
+                    data.get("character_name", {}).get("value", "character")
+                )
+
+            except ValueError as exc:
+                st.error(f"Parse error: {exc}")
+            except Exception as exc:
+                st.error(f"Unexpected error: {exc}")
+            finally:
+                if tmp_path and tmp_path.exists():
+                    tmp_path.unlink()
+
+    # ── Results ───────────────────────────────────────────────────────────────
+    yaml_str: str | None = st.session_state.get("ingester_yaml")
+    if yaml_str:
+        char_name = st.session_state.get("ingester_char_name", "character")
+        filename  = char_name.lower().replace(" ", "_") + ".yaml"
+
+        st.divider()
+        dl_col, save_col = st.columns(2)
+
+        with dl_col:
+            st.download_button(
+                "⬇ Download YAML",
+                data=yaml_str,
+                file_name=filename,
+                mime="text/yaml",
+                use_container_width=True,
+                key="ing_download",
+            )
+        with save_col:
+            if st.button(
+                "💾 Save to Characters Folder",
+                use_container_width=True, key="ing_save",
+            ):
+                (CHARS_DIR / filename).write_text(yaml_str, encoding="utf-8")
+                st.success(
+                    f"Saved to `characters/{filename}` — "
+                    "now available in Character Creator and Chat."
+                )
+
+        st.code(yaml_str, language="yaml")
+
+
+# ── Page 5: Chat ──────────────────────────────────────────────────────────────
 
 def render_chat() -> None:
     st.title("Chat")
@@ -1043,7 +1200,7 @@ with st.sidebar:
     st.divider()
     page = st.radio(
         "Navigate",
-        ["Character Creator", "Knowledge Base", "Rubric Builder", "Chat"],
+        ["Character Creator", "Knowledge Base", "Rubric Builder", "Transcript Ingester", "Chat"],
         label_visibility="collapsed",
     )
     st.divider()
@@ -1055,5 +1212,7 @@ elif page == "Knowledge Base":
     render_knowledge()
 elif page == "Rubric Builder":
     render_rubric()
+elif page == "Transcript Ingester":
+    render_ingester()
 elif page == "Chat":
     render_chat()

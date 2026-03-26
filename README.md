@@ -106,6 +106,9 @@ Upload documents (`.txt`, `.md`, `.yaml`) that give the character background kno
 **Rubric Builder**
 Create and edit evaluation rubrics — structured scoring guides that tell the evaluator (another LLM) what to look for in the character's responses. Used by `run_eval.py` for offline evaluation of saved conversations.
 
+**Transcript Ingester**
+Paste or upload a plain-text conversation transcript and the engine will reverse-engineer a full character YAML from it — name, personality, background, speaking style, secrets, voice samples, and more. Useful when you have existing writing (a script, a chat log, a roleplay session) and want to turn it into a working character without building from scratch. Everything the engine infers is flagged with `# inferred - verify` so you know what needs a human eye before it goes into a demo. Use this when you have source material; use Character Creator when you're building from scratch.
+
 **Chat**
 Talk to your character. Choose a character, set the mode (Version B for the full dynamic system, A vs B to see both side by side), toggle RAG on or off, and start typing. You can inspect the conversation state at any point — trust level, emotional state, active topics — and save the conversation log when you're done for evaluation.
 
@@ -657,6 +660,8 @@ streamlit run app.py
 ```
 
 Your browser will open automatically with the Persona Engine interface. If it doesn't, go to `http://localhost:8501`. Note: the app only works while Terminal is running. If you close Terminal, the browser tab will stop working — just run the three startup lines again to bring it back.
+
+The app has five pages in the left sidebar: **Character Creator** (build and edit characters), **Knowledge Base** (upload background documents), **Rubric Builder** (create scoring guides), **Transcript Ingester** (turn an existing conversation into a character — paste or upload a transcript and it figures out the rest), and **Chat** (talk to your character). If someone has given you a transcript to work from, start with Transcript Ingester. If you're building a character from scratch, start with Character Creator.
 
 ---
 
