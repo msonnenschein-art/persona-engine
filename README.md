@@ -71,6 +71,7 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+pip install watchdog  # optional but recommended — makes the app reload faster during development
 
 # Set up your environment file
 cp .env.example .env
@@ -583,13 +584,19 @@ Open Finder (the smiley-face icon in your Dock). In the search bar at the top ri
 3. Click **Download ZIP**.
 4. Your Downloads folder will have a file called `persona-engine-main.zip`. Double-click it to unzip.
 5. You'll see a folder called `persona-engine-main`. Rename it to `persona-engine` (click once to select, press Return, type the new name, press Return again).
-6. Move it to your home folder. Your home folder is the one with your name on it — in Finder, look in the sidebar under Locations or Favourites, or press **Command + Shift + H** to go there directly. Drag the `persona-engine` folder there.
+6. Move it to your home folder. Your home folder is the one with your name on it — in Finder, look in the sidebar under Locations or Favourites, or press **Command + Shift + H** to go there directly. Drag the `persona-engine` folder there. This is the same folder that Terminal refers to as `~/` — so `~/persona-engine` just means "the persona-engine folder inside your home folder." To confirm it's in the right place, type `ls ~/persona-engine` in Terminal and press Return — if you see a list of files, you're good. If you get an error, the folder is in the wrong place.
 
 ---
 
 **Open Terminal:**
 
 Press **Command + Space** to open Spotlight. Type `Terminal` and press Return. A black or white window with a text prompt will open. This is where you'll type the setup commands.
+
+---
+
+**First, check if Python is installed:**
+
+In Terminal, type `python3 --version` and press Return. If you see a version number (3.9 or higher), you're good. If you get `command not found`, go to [python.org](https://www.python.org), download the latest version, install it, then come back here.
 
 ---
 
@@ -649,7 +656,7 @@ Back in Terminal:
 streamlit run app.py
 ```
 
-Your browser will open automatically with the Persona Engine interface. If it doesn't, go to `http://localhost:8501`.
+Your browser will open automatically with the Persona Engine interface. If it doesn't, go to `http://localhost:8501`. Note: the app only works while Terminal is running. If you close Terminal, the browser tab will stop working — just run the three startup lines again to bring it back.
 
 ---
 
