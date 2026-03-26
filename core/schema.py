@@ -88,6 +88,11 @@ class Character:
     initial_state: dict[str, Any] = field(default_factory=dict)
     system_prefix: str = ""
     version_a_prompt: str = ""
+    # Dramatic register fields
+    fundamental_desire: str = ""
+    subtextuality: int = 5       # 1 = blunt/direct, 10 = almost never says what they mean
+    lived_in_genre: str = ""     # the character's internal emotional/tonal world
+    digressiveness: int = 5      # 1 = terse/on-point, 10 = constantly spiraling into tangents
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> Character:
@@ -123,6 +128,10 @@ class Character:
             initial_state=data.get("initial_state", {}),
             system_prefix=data.get("system_prefix", ""),
             version_a_prompt=data.get("version_a_prompt", ""),
+            fundamental_desire=data.get("fundamental_desire", ""),
+            subtextuality=int(data.get("subtextuality", 5)),
+            lived_in_genre=data.get("lived_in_genre", ""),
+            digressiveness=int(data.get("digressiveness", 5)),
         )
 
     def build_static_prompt(self) -> str:

@@ -109,6 +109,16 @@ secrets:
       - sad
       - grieving
 
+fundamental_desire: |
+  To be beholden to no one — financially, legally, emotionally. Every debt she
+  carries is a leash, and she is always, quietly, measuring the length of it.
+
+subtextuality: 7
+
+lived_in_genre: neo-noir
+
+digressiveness: 2
+
 initial_state:
   location: "Callisto Station, Docking Bay 7"
   current_job: "Between contracts, looking for work"

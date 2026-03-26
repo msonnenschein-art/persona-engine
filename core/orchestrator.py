@@ -22,6 +22,63 @@ class Mode(Enum):
     VERSION_B = "b"  # Dynamic context assembly
 
 
+def _subtext_directive(score: int) -> str:
+    """Return a subtext instruction scaled to the 1-10 subtextuality score."""
+    if score <= 2:
+        return (
+            "Subtext: minimal — this character says what they mean, plainly and directly."
+        )
+    if score <= 4:
+        return (
+            "Subtext: low — this character is mostly direct but occasionally hints "
+            "rather than states outright."
+        )
+    if score <= 6:
+        return (
+            "Subtext: moderate — feelings are implied as often as named; "
+            "the character hedges and deflects on emotional topics."
+        )
+    if score <= 8:
+        return (
+            "Subtext: high — this character rarely names their feelings directly; "
+            "prefer implication, deflection, and indirection over plain statement."
+        )
+    return (
+        "Subtext: very high — almost nothing this character says should be taken "
+        "at face value; emotions and intentions are buried under misdirection, "
+        "deflection, and pointed silence."
+    )
+
+
+def _digression_directive(score: int) -> str:
+    """Return a pacing/structure instruction scaled to the 1-10 digressiveness score."""
+    if score <= 2:
+        return (
+            "Pacing: respond concisely and on-point — cut to what matters, "
+            "avoid tangents, don't linger."
+        )
+    if score <= 4:
+        return (
+            "Pacing: mostly direct; brief asides are fine when natural "
+            "but return to the thread quickly."
+        )
+    if score <= 6:
+        return (
+            "Pacing: balanced — occasional digressions and asides are welcome "
+            "when they add texture."
+        )
+    if score <= 8:
+        return (
+            "Pacing: digressive — feel free to wander, circle back, and follow "
+            "tangents before returning to the point."
+        )
+    return (
+        "Pacing: highly digressive — lean into spiraling asides and tangential "
+        "detours; this character's mind rarely travels in a straight line and "
+        "frequently loses — then rediscovers — the thread."
+    )
+
+
 @dataclass
 class ConversationTurn:
     """A single turn in the conversation."""
@@ -78,10 +135,28 @@ class PersonaOrchestrator:
             sections.append(self.character.system_prefix)
 
         sections.append(f"You are {self.character.name}.")
-        sections.append(f"\n## Core Identity\n{self.character.description}")
+
+        identity = self.character.description
+        if self.character.fundamental_desire:
+            identity += f"\n\nFundamental desire: {self.character.fundamental_desire}"
+        sections.append(f"\n## Core Identity\n{identity}")
+
         sections.append(f"\n## Personality\n{self.character.personality}")
         sections.append(f"\n## Background\n{self.character.background}")
         sections.append(f"\n## Speaking Style\n{self.character.speaking_style}")
+
+        register_lines = []
+        if self.character.lived_in_genre:
+            register_lines.append(
+                f"- Tonal register: {self.character.lived_in_genre} — "
+                "let this emotional world shape your diction, pacing, and mood."
+            )
+        if self.character.subtextuality:
+            register_lines.append(f"- {_subtext_directive(self.character.subtextuality)}")
+        if self.character.digressiveness:
+            register_lines.append(f"- {_digression_directive(self.character.digressiveness)}")
+        if register_lines:
+            sections.append("\n## Dramatic Register\n" + "\n".join(register_lines))
 
         if self.character.goals:
             sections.append("\n## Current Goals\n" + "\n".join(f"- {g}" for g in self.character.goals))
