@@ -15,6 +15,9 @@ sentence-transformers>=2.7.0
 # Evaluation — LLM-as-judge rubric scoring
 deepeval>=1.4.0
 
+# Character Creator UI
+streamlit>=1.40.0
+
 # Type checking (optional, for development)
 # mypy>=1.11.0
 # types-PyYAML>=6.0.12

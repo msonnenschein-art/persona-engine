@@ -63,6 +63,13 @@ class CharacterSecrets:
 
 
 @dataclass
+class VoiceSample:
+    """A voice reference exchange — style anchor, not tied to any trigger or trait."""
+    exchange: str
+    context: str = ""
+
+
+@dataclass
 class MemoryConfig:
     """Configuration for tiered memory system."""
     short_term_limit: int = 10
@@ -88,6 +95,7 @@ class Character:
     initial_state: dict[str, Any] = field(default_factory=dict)
     system_prefix: str = ""
     version_a_prompt: str = ""
+    voice_samples: list[VoiceSample] = field(default_factory=list)
     # Dramatic register fields
     fundamental_desire: str = ""
     subtextuality: int = 5       # 1 = blunt/direct, 10 = almost never says what they mean
@@ -114,6 +122,14 @@ class Character:
 
         memory_config = MemoryConfig(**data.get("memory_config", {}))
 
+        voice_samples = [
+            VoiceSample(
+                exchange=vs["exchange"],
+                context=vs.get("context", ""),
+            )
+            for vs in data.get("voice_samples", [])
+        ]
+
         return cls(
             name=data["name"],
             description=data.get("description", ""),
@@ -128,6 +144,7 @@ class Character:
             initial_state=data.get("initial_state", {}),
             system_prefix=data.get("system_prefix", ""),
             version_a_prompt=data.get("version_a_prompt", ""),
+            voice_samples=voice_samples,
             fundamental_desire=data.get("fundamental_desire", ""),
             subtextuality=int(data.get("subtextuality", 5)),
             lived_in_genre=data.get("lived_in_genre", ""),

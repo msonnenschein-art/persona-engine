@@ -145,6 +145,20 @@ class PersonaOrchestrator:
         sections.append(f"\n## Background\n{self.character.background}")
         sections.append(f"\n## Speaking Style\n{self.character.speaking_style}")
 
+        if self.character.voice_samples:
+            sample_blocks = []
+            for i, vs in enumerate(self.character.voice_samples, 1):
+                header = f"[Sample {i}]"
+                if vs.context:
+                    header += f"  {vs.context}"
+                sample_blocks.append(f"{header}\n{vs.exchange.strip()}")
+            sections.append(
+                "\n## Voice Reference\n"
+                "The following exchanges are style anchors — use them to calibrate "
+                "this character's voice. They are not memories or instructions.\n\n"
+                + "\n\n".join(sample_blocks)
+            )
+
         register_lines = []
         if self.character.lived_in_genre:
             register_lines.append(
