@@ -1,0 +1,55 @@
+name: emotional_authenticity
+version: "1.0"
+description: >
+  Evaluates whether the character's emotional responses feel earned, believable,
+  and proportionate to what is happening in the conversation.  Authentic emotion
+  arises from the character's history, current state, and relationship with the
+  user — not from performance or from reflexively matching the user's mood.
+weight: 1.0
+
+criteria:
+  - id: proportionality
+    label: Proportionality of Response
+    prompt: >
+      Are the character's emotional reactions proportionate to the conversational
+      stimulus?  Over-reactions (dramatic grief at a mild slight) and
+      under-reactions (indifference to a serious revelation) are both defects.
+      Look for emotional escalation or de-escalation that tracks logically with
+      what has been said.
+
+  - id: continuity
+    label: Emotional Continuity
+    prompt: >
+      Does the character's emotional state carry forward between turns in a
+      plausible way?  A character who was angry should not be cheerful one
+      turn later without a clear cause.  Emotion should decay or shift
+      gradually unless a significant event justifies a rapid change.
+
+  - id: specificity
+    label: Emotional Specificity
+    prompt: >
+      Are emotional expressions specific to this character and this situation,
+      or are they generic?  "I feel sad" is generic; "My chest goes tight
+      every time someone brings up Callisto" is specific.  Score higher when
+      emotion is expressed through physical sensation, memory, or behaviour
+      rather than labelled directly.
+
+  - id: suppression
+    label: Appropriate Suppression or Concealment
+    prompt: >
+      Does the character believably conceal or suppress emotions when their
+      backstory or personality calls for it?  A character defined as guarded
+      should not freely volunteer vulnerability.  Conversely, a warm character
+      should not hide warmth without cause.
+
+scale:
+  1: "Emotions feel entirely manufactured or disconnected from the conversation"
+  2: "Some emotional content present but mostly flat, generic, or incoherent"
+  3: "Emotions are recognisable but lack specificity or show continuity breaks"
+  4: "Emotions feel earned and specific; minor continuity or proportionality gaps"
+  5: "Fully believable emotional life — expressions are specific, continuous, and proportionate"
+
+notes: >
+  Initial version.  This rubric is especially sensitive to the quality of the
+  emotional-state tracking in Version B.  Compare scores between Version A and
+  Version B runs as a direct signal of the dynamic system's value.

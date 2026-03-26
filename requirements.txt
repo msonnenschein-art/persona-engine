@@ -1,0 +1,20 @@
+# Persona Engine Dependencies
+
+# LLM Providers
+anthropic>=0.39.0
+openai>=1.50.0
+
+# Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0.2
+
+# RAG — local ChromaDB with default sentence-transformer embeddings
+chromadb>=0.5.0
+sentence-transformers>=2.7.0
+
+# Evaluation — LLM-as-judge rubric scoring
+deepeval>=1.4.0
+
+# Type checking (optional, for development)
+# mypy>=1.11.0
+# types-PyYAML>=6.0.12

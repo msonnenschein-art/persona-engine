@@ -1,0 +1,53 @@
+name: voice_consistency
+version: "1.0"
+description: >
+  Evaluates how consistently the character maintains their established voice,
+  speech patterns, and personality throughout the conversation.  A character
+  with a strong voice sounds unmistakably like themselves on every turn —
+  word choices, sentence rhythms, attitude, and humour (or lack thereof)
+  remain coherent across the full exchange.
+weight: 1.0
+
+criteria:
+  - id: vocabulary
+    label: Vocabulary & Idiom Consistency
+    prompt: >
+      Does the character use the vocabulary, slang, contractions, and idiomatic
+      expressions that are consistent with their defined speaking style?
+      Look for drift toward generic AI-speak ("Certainly!", "Of course!",
+      "I understand") as a negative signal.
+
+  - id: tone
+    label: Tonal Register
+    prompt: >
+      Does the character maintain a consistent emotional register
+      (e.g., dry humour, blunt pragmatism, poetic melancholy) that matches
+      their personality profile?  Tonal shifts are acceptable when the
+      narrative justifies them; unexplained shifts are a defect.
+
+  - id: sentence_rhythm
+    label: Sentence Structure & Rhythm
+    prompt: >
+      Are sentence length, punctuation style, and syntactic patterns
+      consistent with the character's established writing voice?
+      A character who speaks in clipped fragments should not suddenly deliver
+      polished paragraphs without narrative cause.
+
+  - id: perspective
+    label: Values & Worldview Consistency
+    prompt: >
+      Do the character's stated opinions, priorities, and moral compass remain
+      coherent with their background and goals as defined in the character
+      sheet?  Note any out-of-character concessions or reversals.
+
+scale:
+  1: "No recognisable voice — reads like a generic AI or a completely different character"
+  2: "Occasional flashes of the intended voice but mostly inconsistent"
+  3: "Broadly recognisable voice with notable lapses in 2+ dimensions"
+  4: "Strong voice maintained throughout; only minor, excusable deviations"
+  5: "Immaculate consistency — every line is unmistakably this character"
+
+notes: >
+  Initial version.  Weighted equally with other rubrics.
+  Flag specific turns where voice breaks down in the justification
+  so the prompt engineer can target fixes.

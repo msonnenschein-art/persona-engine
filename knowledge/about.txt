@@ -1,0 +1,50 @@
+Persona Engine — Project Overview
+===================================
+
+The Persona Engine is a character AI framework that powers dynamic, stateful
+conversations with richly defined fictional characters.  It supports two
+operating modes:
+
+Version A (Static Prompt)
+  The character's entire personality, background, and speaking style is
+  encoded in a single static system prompt loaded from a YAML file.  No
+  state is tracked between turns.  This is the baseline against which the
+  dynamic system is compared.
+
+Version B (Dynamic Context Assembly)
+  The system prompt is rebuilt on every turn using live conversational data:
+  - Emotional state (primary emotion, intensity, decay over time)
+  - Relationship metrics with the user (trust, familiarity, rapport, tension)
+  - A three-tier memory system (short-term, long-term, episodic)
+  - Conditionally revealable secrets gated on trust thresholds and triggers
+  - Semantic knowledge retrieval from the knowledge base (RAG)
+
+Memory Architecture
+  Short-term memory — A FIFO buffer of recent conversational facts, capped
+    at a configurable limit (default: 10 entries).  Consolidated into
+    long-term memory every 5 turns.
+  Long-term memory — Important facts retained across context windows,
+    scored by importance, access frequency, and recency decay.
+  Episodic memory — Summaries of complete interaction sessions, stored at
+    session end.  Includes topic summary, key events, and emotional arc.
+  Cold memory (RAG) — ChromaDB-backed semantic retrieval from documents in
+    the knowledge/ folder.  Ingested automatically on startup.
+
+Character Definition
+  Characters are defined in YAML files under characters/.  Each file contains:
+  - Core identity: name, description, personality, background, speaking style
+  - Goals and quirks
+  - Relationships with named NPCs
+  - Secrets with reveal conditions (NEVER, TRUST_THRESHOLD, EXPLICIT_ASK,
+    EMOTIONAL_STATE, KEYWORD_TRIGGER)
+  - Memory configuration overrides
+  - A static Version A prompt (version_a_prompt field)
+  - A system prefix for Version B
+
+Evaluation
+  The rubrics/ folder contains YAML-based evaluation rubrics used with
+  DeepEval for LLM-as-judge scoring.  Run run_eval.py to evaluate a
+  conversation log against one or more rubrics.
+
+This knowledge base can be extended by adding .txt, .md, or .yaml files
+to the knowledge/ folder.  They are automatically indexed by the RAG manager.
