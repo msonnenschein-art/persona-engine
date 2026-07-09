@@ -31,6 +31,7 @@ CHARS_DIR = Path("characters")
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 DISCORD_CHARACTER = os.getenv("DISCORD_CHARACTER", "reva_sample")
 PROVIDER = os.getenv("PERSONA_DEFAULT_PROVIDER", "anthropic")
+MODEL = os.getenv("PERSONA_DEFAULT_MODEL", "claude-sonnet-4-6")
 CHARACTER_PATH = CHARS_DIR / f"{DISCORD_CHARACTER}.yaml"
 
 MAX_DISCORD_MESSAGE_LENGTH = 2000
@@ -53,15 +54,16 @@ class SessionStore:
     persistence layer can be dropped in later without touching call sites.
     """
 
-    def __init__(self, character_path: Path, provider: str):
+    def __init__(self, character_path: Path, provider: str, model: str):
         self._character_path = character_path
         self._provider = provider
+        self._model = model
         self._sessions: dict[int, PersonaOrchestrator] = {}
 
     def get_or_create(self, user_id: int) -> PersonaOrchestrator:
         if user_id not in self._sessions:
             self._sessions[user_id] = create_orchestrator(
-                self._character_path, provider=self._provider, mode="b",
+                self._character_path, provider=self._provider, mode="b", model=self._model,
             )
         return self._sessions[user_id]
 
@@ -98,7 +100,7 @@ def split_message(text: str, limit: int = MAX_DISCORD_MESSAGE_LENGTH) -> list[st
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
-sessions = SessionStore(CHARACTER_PATH, PROVIDER)
+sessions = SessionStore(CHARACTER_PATH, PROVIDER, MODEL)
 
 
 def _strip_mention(content: str) -> str:
@@ -109,7 +111,7 @@ def _strip_mention(content: str) -> str:
 
 @client.event
 async def on_ready():
-    print(f"Logged in as {client.user} — serving character '{DISCORD_CHARACTER}'")
+    print(f"Logged in as {client.user} — serving character '{DISCORD_CHARACTER}'", flush=True)
 
 
 @client.event
