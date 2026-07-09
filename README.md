@@ -13,9 +13,10 @@ A character AI framework for writers. Build psychologically grounded fictional c
 5. [Character YAML Field Reference](#5-character-yaml-field-reference)
 6. [Rubric YAML Field Reference](#6-rubric-yaml-field-reference)
 7. [Transcript Ingester](#7-transcript-ingester)
-8. [Running an Eval](#8-running-an-eval)
-9. [For Daley — Getting Set Up](#9-for-daley--getting-set-up)
-10. [Architecture Overview](#10-architecture-overview)
+8. [Discord Bot](#8-discord-bot)
+9. [Running an Eval](#9-running-an-eval)
+10. [For Daley — Getting Set Up](#10-for-daley--getting-set-up)
+11. [Architecture Overview](#11-architecture-overview)
 
 ---
 
@@ -522,7 +523,41 @@ Read through every `# inferred - verify` field before using the character. The m
 
 ---
 
-## 8. Running an Eval
+## 8. Discord Bot
+
+`discord_bot.py` puts a single character on Discord. It wraps the same orchestrator the Chat page uses — Version B (dynamic engine), full state and memory tracking — so a Discord conversation behaves exactly like a Chat page conversation.
+
+**Setup**
+
+1. Create a bot application in the [Discord Developer Portal](https://discord.com/developers/applications), add a bot user, and enable the **Message Content** privileged intent.
+2. Add the bot's token and the character it should load to `.env`:
+
+```bash
+DISCORD_BOT_TOKEN=your-discord-bot-token-here
+DISCORD_CHARACTER=reva_sample   # filename stem under characters/
+```
+
+3. Invite the bot to a server (or just DM it) with the `bot` scope and permission to read/send messages.
+
+**Running it**
+
+```bash
+python discord_bot.py
+```
+
+**How it behaves**
+
+- Responds when DMed directly, or when @-mentioned in a server channel. Every other message, and every message from another bot, is ignored.
+- Each Discord user gets their own independent conversation session — separate memory, trust, and mood — keyed by Discord user ID. Sessions are in-memory only and reset when the bot restarts.
+- `!reset` wipes the sender's session and starts fresh; `!help` prints a short description of the bot.
+- Shows Discord's typing indicator while the engine generates a reply, and splits replies over Discord's 2000-character limit at sentence boundaries.
+- If the engine call fails (bad API key, rate limit, provider outage), the bot replies with a short apology instead of crashing or going silent.
+
+User metrics logging and A/B assignment aren't wired up yet — the session store is structured so a persistence layer can be dropped in later without touching the message-handling code.
+
+---
+
+## 9. Running an Eval
 
 `run_eval.py` scores a saved conversation against one or more rubrics. The conversation log is a YAML file in the format the Chat page exports.
 
@@ -568,7 +603,7 @@ turns:
 
 ---
 
-## 9. For Daley — Getting Set Up
+## 10. For Daley — Getting Set Up
 
 This section is written for someone who hasn't done this before. Take it one step at a time.
 
@@ -679,7 +714,7 @@ When you're done, close the browser tab and press **Control + C** in Terminal to
 
 ---
 
-## 10. Architecture Overview
+## 11. Architecture Overview
 
 The engine is built around a single central object — the `PersonaOrchestrator` — which assembles the system prompt fresh each turn in Version B mode. Here's how the pieces fit together:
 
