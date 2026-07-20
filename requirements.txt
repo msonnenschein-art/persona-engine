@@ -1,26 +1,23 @@
 # Persona Engine Dependencies
+# Pinned for reproducible installs on Python 3.12 (Railway and local).
 
 # LLM Providers
-anthropic>=0.39.0
-openai>=1.50.0
+anthropic==0.86.0
+openai==2.30.0
 
 # Configuration
-python-dotenv>=1.0.0
-pyyaml>=6.0.2
+python-dotenv==1.2.2
+PyYAML==6.0.3
 
 # RAG — local ChromaDB with default sentence-transformer embeddings
-chromadb>=0.5.0
-sentence-transformers>=2.7.0
+chromadb==1.5.5
+sentence-transformers==5.6.0
 
 # Evaluation — LLM-as-judge rubric scoring
-deepeval>=1.4.0
+deepeval==3.9.3
 
 # Character Creator UI
-streamlit>=1.40.0
+streamlit==1.55.0
 
 # Discord Bot
-discord.py>=2.4.0
-
-# Type checking (optional, for development)
-# mypy>=1.11.0
-# types-PyYAML>=6.0.12
+discord.py==2.7.1

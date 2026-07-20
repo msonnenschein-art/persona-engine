@@ -17,6 +17,7 @@ A character AI framework for writers. Build psychologically grounded fictional c
 9. [Running an Eval](#9-running-an-eval)
 10. [For Daley — Getting Set Up](#10-for-daley--getting-set-up)
 11. [Architecture Overview](#11-architecture-overview)
+12. [Deployment (Railway)](#12-deployment-railway)
 
 ---
 
@@ -525,16 +526,17 @@ Read through every `# inferred - verify` field before using the character. The m
 
 ## 8. Discord Bot
 
-`discord_bot.py` puts a single character on Discord. It wraps the same orchestrator the Chat page uses — Version B (dynamic engine), full state and memory tracking — so a Discord conversation behaves exactly like a Chat page conversation.
+`discord_bot.py` puts a single character on Discord. It wraps the same orchestrator the Chat page uses, with full conversation state and memory tracking persisted to SQLite — so conversations survive bot restarts.
 
 **Setup**
 
 1. Create a bot application in the [Discord Developer Portal](https://discord.com/developers/applications), add a bot user, and enable the **Message Content** privileged intent.
-2. Add the bot's token and the character it should load to `.env`:
+2. Add the required variables to `.env` (see `.env.example` for all options):
 
 ```bash
 DISCORD_BOT_TOKEN=your-discord-bot-token-here
 DISCORD_CHARACTER=reva_sample   # filename stem under characters/
+HASH_SALT=your-random-salt-here  # salt for hashing user IDs — keep this secret
 ```
 
 3. Invite the bot to a server (or just DM it) with the `bot` scope and permission to read/send messages.
@@ -548,12 +550,33 @@ python discord_bot.py
 **How it behaves**
 
 - Responds when DMed directly, or when @-mentioned in a server channel. Every other message, and every message from another bot, is ignored.
-- Each Discord user gets their own independent conversation session — separate memory, trust, and mood — keyed by Discord user ID. Sessions are in-memory only and reset when the bot restarts.
-- `!reset` wipes the sender's session and starts fresh; `!help` prints a short description of the bot.
+- Each Discord user is permanently assigned 50/50 to **Version A** (static engine) or **Version B** (dynamic engine with state, memory, and relationship tracking). The assignment is invisible to the user — nothing in the bot's replies indicates which version they have.
+- Conversation state (messages, memory, emotional state) is persisted to SQLite after every turn. If the bot restarts, each user picks up exactly where they left off.
+- Sessions are tracked for analytics. A session is considered ended after 30 minutes of inactivity; a new message after that opens a fresh session.
 - Shows Discord's typing indicator while the engine generates a reply, and splits replies over Discord's 2000-character limit at sentence boundaries.
 - If the engine call fails (bad API key, rate limit, provider outage), the bot replies with a short apology instead of crashing or going silent.
 
-User metrics logging and A/B assignment aren't wired up yet — the session store is structured so a persistence layer can be dropped in later without touching the message-handling code.
+**Commands**
+
+| Command | Who can use it | What it does |
+|---|---|---|
+| `!help` | Anyone | Shows a short description of the bot and its commands |
+| `!reset` | Anyone | Wipes the sender's conversation history and engine state and starts fresh |
+| `!status` | Anyone | Shows uptime, total user count, total sessions, sessions in the last 24h, and the model in use |
+
+**Heartbeat**
+
+If `HEARTBEAT_CHANNEL_ID` is set, the bot posts a status line to that channel once a day and attaches the SQLite database file as a backup. If the variable is unset or empty, the heartbeat is silently skipped — safe for local dev.
+
+**Stats CLI**
+
+`stats.py` queries the database and prints a summary table:
+
+```bash
+python stats.py
+```
+
+Output includes: users per version, sessions per user, average turns per session, and D1/D7 return rates.
 
 ---
 
@@ -770,3 +793,45 @@ The engine is built around a single central object — the `PersonaOrchestrator`
 | `core/comparison.py` | Runs the same input through both a Version A and Version B orchestrator in parallel, returns both responses for side-by-side display. |
 | `core/rubric_loader.py` | Parses rubric YAML files into DeepEval `GEval` metrics for LLM-as-judge evaluation. |
 | `core/llm_adapter.py` | Thin abstraction over the Anthropic and OpenAI APIs. Handles both synchronous and streaming responses. |
+
+---
+
+## 12. Deployment (Railway)
+
+The Discord bot runs as a **worker process** (no web server, no port binding). Railway supports this natively via the `Procfile`.
+
+**Procfile**
+
+```
+worker: python discord_bot.py
+```
+
+**Required environment variables**
+
+Set these in the Railway variable dashboard (not in a committed `.env`):
+
+| Variable | Required | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude models |
+| `DISCORD_BOT_TOKEN` | Yes | Bot token from the Discord Developer Portal |
+| `DISCORD_CHARACTER` | Yes | Character filename stem (e.g. `reva_sample`) |
+| `HASH_SALT` | Yes | Random secret used when hashing Discord user IDs. Generate with `python -c "import secrets; print(secrets.token_hex(32))"`. **Keep this stable** — changing it invalidates all existing user records. |
+| `DB_PATH` | Yes | Path to the SQLite file, e.g. `/data/bot.db` (must point at a persistent volume — see below) |
+| `PERSONA_DEFAULT_MODEL` | No | LLM model name; defaults to `claude-sonnet-4-6` |
+| `PERSONA_DEFAULT_PROVIDER` | No | `anthropic` or `openai`; defaults to `anthropic` |
+| `OPENAI_API_KEY` | No | Required only if `PERSONA_DEFAULT_PROVIDER=openai` |
+| `HEARTBEAT_CHANNEL_ID` | No | Discord channel ID for daily status posts and DB backups |
+
+**Persistent volume (required)**
+
+The SQLite database must survive deploys.  In Railway:
+
+1. Add a **Volume** to the bot service.
+2. Set the mount path to `/data`.
+3. Set `DB_PATH=/data/bot.db` in the Railway variable dashboard.
+
+Without a volume, the database resets on every deploy and all user assignments and conversation history are lost.
+
+**What writes to disk**
+
+The bot writes only to `DB_PATH` (the SQLite file).  Nothing else writes outside the repo directory or the `DB_PATH` directory.  ChromaDB (`.chroma/`) is used only by the Streamlit app, not the bot.
